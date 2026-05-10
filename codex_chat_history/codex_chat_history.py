@@ -20,6 +20,9 @@ from pathlib import Path
 
 PATH_RE = re.compile(r"(/[A-Za-z0-9._/@+~-]+)+")
 
+# Matches codex-rollout `ARCHIVED_SESSIONS_SUBDIR` (rollout files under CODEX_HOME).
+ARCHIVED_SESSIONS_SUBDIR = "archived_sessions"
+
 
 def _codex_home() -> Path:
     raw = os.environ.get("CODEX_HOME", "").strip()
@@ -33,6 +36,10 @@ def _sessions_root() -> Path:
     if raw:
         return Path(raw).expanduser().resolve()
     return _codex_home() / "sessions"
+
+
+def _archived_sessions_root() -> Path:
+    return _codex_home() / ARCHIVED_SESSIONS_SUBDIR
 
 
 def _default_backup_root() -> Path:
@@ -77,13 +84,13 @@ def _mtime_cutoff_seconds(since: str) -> float | None:
     raise SystemExit(f"invalid --since {since!r}; use e.g. 1d or 48h")
 
 
-def cmd_backup(args: argparse.Namespace) -> None:
-    src_root: Path = args.src.expanduser().resolve()
-    dst_root: Path = args.dst.expanduser().resolve()
-    if not src_root.is_dir():
-        print(f"error: source directory missing: {src_root}", file=sys.stderr)
-        sys.exit(1)
-
+def _backup_walk_one_tree(
+    src_root: Path,
+    dst_root: Path,
+    *,
+    dry_run: bool,
+    force: bool,
+) -> tuple[int, int]:
     n_gz = 0
     n_other = 0
     for path in sorted(src_root.rglob("*")):
@@ -93,10 +100,10 @@ def cmd_backup(args: argparse.Namespace) -> None:
         dst = dst_root / rel
         if path.suffix == ".jsonl" and path.name.startswith("rollout-"):
             dst_gz = dst.with_suffix(path.suffix + ".gz")
-            if not args.force and _should_skip_jsonl(path, dst_gz):
+            if not force and _should_skip_jsonl(path, dst_gz):
                 continue
             n_gz += 1
-            if args.dry_run:
+            if dry_run:
                 print(f"gz  {path} -> {dst_gz}")
                 continue
             dst_gz.parent.mkdir(parents=True, exist_ok=True)
@@ -115,11 +122,38 @@ def cmd_backup(args: argparse.Namespace) -> None:
                 pass
         else:
             n_other += 1
-            if args.dry_run:
+            if dry_run:
                 print(f"cp  {path} -> {dst}")
                 continue
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, dst)
+    return n_gz, n_other
+
+
+def cmd_backup(args: argparse.Namespace) -> None:
+    src_root: Path = args.src.expanduser().resolve()
+    dst_root: Path = args.dst.expanduser().resolve()
+    if not src_root.is_dir():
+        print(f"error: source directory missing: {src_root}", file=sys.stderr)
+        sys.exit(1)
+
+    n_gz, n_other = _backup_walk_one_tree(
+        src_root,
+        dst_root,
+        dry_run=args.dry_run,
+        force=args.force,
+    )
+    if args.archived:
+        archived = _archived_sessions_root()
+        if archived.is_dir():
+            g2, o2 = _backup_walk_one_tree(
+                archived,
+                dst_root,
+                dry_run=args.dry_run,
+                force=args.force,
+            )
+            n_gz += g2
+            n_other += o2
 
     verb = "would write" if args.dry_run else "wrote"
     print(f"{verb} {n_gz} rollout gzip file(s), {n_other} other file(s) -> {dst_root}")
@@ -133,16 +167,18 @@ def cmd_list(args: argparse.Namespace) -> None:
         if cutoff is not None and p.stat().st_mtime < cutoff:
             continue
         print(p)
+    if args.archived:
+        for p in _iter_rollouts(_archived_sessions_root()):
+            if cutoff is not None and p.stat().st_mtime < cutoff:
+                continue
+            print(p)
 
 
-def cmd_profile(args: argparse.Namespace) -> None:
-    root: Path = args.src.expanduser().resolve()
-    awk: Path | None = args.awk.expanduser().resolve() if args.awk else None
-    if awk and not awk.is_file():
-        print(f"error: awk script not found: {awk}", file=sys.stderr)
-        sys.exit(1)
-
-    cutoff = _mtime_cutoff_seconds(args.since)
+def _profile_one_root(
+    root: Path,
+    awk: Path | None,
+    cutoff: float | None,
+) -> None:
     for path in _iter_rollouts(root):
         if cutoff is not None and path.stat().st_mtime < cutoff:
             continue
@@ -159,6 +195,19 @@ def cmd_profile(args: argparse.Namespace) -> None:
                 for _ in bf:
                     nlines += 1
             print(f"(no --awk) size={nbytes} bytes lines={nlines}")
+
+
+def cmd_profile(args: argparse.Namespace) -> None:
+    root: Path = args.src.expanduser().resolve()
+    awk: Path | None = args.awk.expanduser().resolve() if args.awk else None
+    if awk and not awk.is_file():
+        print(f"error: awk script not found: {awk}", file=sys.stderr)
+        sys.exit(1)
+
+    cutoff = _mtime_cutoff_seconds(args.since)
+    _profile_one_root(root, awk, cutoff)
+    if args.archived:
+        _profile_one_root(_archived_sessions_root(), awk, cutoff)
 
 
 def _first_last_timestamps(path: Path) -> tuple[str | None, str | None]:
@@ -181,6 +230,16 @@ def _first_last_timestamps(path: Path) -> tuple[str | None, str | None]:
     return first_ts, last_ts
 
 
+def _bounds_emit_paths(paths: list[Path], cutoff: float | None) -> None:
+    for path in paths:
+        if cutoff is not None and path.stat().st_mtime < cutoff:
+            continue
+        first_ts, last_ts = _first_last_timestamps(path)
+        print(path)
+        print(f"  FIRST: {first_ts}")
+        print(f"  LAST:  {last_ts}")
+
+
 def cmd_bounds(args: argparse.Namespace) -> None:
     root: Path = args.src.expanduser().resolve()
     cutoff = _mtime_cutoff_seconds(args.since)
@@ -193,13 +252,24 @@ def cmd_bounds(args: argparse.Namespace) -> None:
         )
     else:
         paths = _iter_rollouts(root)
-    for path in paths:
-        if cutoff is not None and path.stat().st_mtime < cutoff:
-            continue
-        first_ts, last_ts = _first_last_timestamps(path)
-        print(path)
-        print(f"  FIRST: {first_ts}")
-        print(f"  LAST:  {last_ts}")
+    _bounds_emit_paths(paths, cutoff)
+    if args.archived:
+        archived = _archived_sessions_root()
+        if archived.is_dir():
+            if args.glob:
+                seen_ar: list[Path] = []
+                for g in args.glob:
+                    seen_ar.extend(archived.glob(g))
+                paths_ar = sorted(
+                    {
+                        p.resolve()
+                        for p in seen_ar
+                        if p.is_file() and p.name.startswith("rollout-")
+                    }
+                )
+            else:
+                paths_ar = _iter_rollouts(archived)
+            _bounds_emit_paths(paths_ar, cutoff)
 
 
 def _redact(text: str) -> str:
@@ -264,11 +334,21 @@ def main() -> None:
     )
     p_b.add_argument("-n", "--dry-run", action="store_true")
     p_b.add_argument("-f", "--force", action="store_true")
+    p_b.add_argument(
+        "--archived",
+        action="store_true",
+        help=f"After --src, also mirror $CODEX_HOME/{ARCHIVED_SESSIONS_SUBDIR} into the same --dst",
+    )
     p_b.set_defaults(func=cmd_backup)
 
     p_l = sub.add_parser("list", help="List rollout paths under --src")
     p_l.add_argument("--src", type=Path, default=_sessions_root(), help=sessions_help)
     p_l.add_argument("--since", default="all", help="e.g. 1d, 48h, or all")
+    p_l.add_argument(
+        "--archived",
+        action="store_true",
+        help=f"After --src, also list rollouts under $CODEX_HOME/{ARCHIVED_SESSIONS_SUBDIR}",
+    )
     p_l.set_defaults(func=cmd_list)
 
     p_p = sub.add_parser("profile", help="Histogram each rollout (optional awk)")
@@ -280,6 +360,11 @@ def main() -> None:
         help="Path to line_histogram.awk (beside this script in the repo)",
     )
     p_p.add_argument("--since", default="all")
+    p_p.add_argument(
+        "--archived",
+        action="store_true",
+        help=f"After --src, also profile rollouts under $CODEX_HOME/{ARCHIVED_SESSIONS_SUBDIR}",
+    )
     p_p.set_defaults(func=cmd_profile)
 
     p_x = sub.add_parser("bounds", help="First and last timestamp per rollout")
@@ -290,6 +375,14 @@ def main() -> None:
         help="Optional glob(s) relative to --src (repeatable), default all rollouts",
     )
     p_x.add_argument("--since", default="all")
+    p_x.add_argument(
+        "--archived",
+        action="store_true",
+        help=(
+            f"After --src (and any --glob under --src), also bounds rollouts under "
+            f"$CODEX_HOME/{ARCHIVED_SESSIONS_SUBDIR} (same --glob relative to archived root if set)"
+        ),
+    )
     p_x.set_defaults(func=cmd_bounds)
 
     p_u = sub.add_parser("user-messages", help="Extract user_message text from one rollout")

@@ -51,11 +51,13 @@ All paths support **`~`** expansion. Use **absolute** paths when clarity matters
 
 **CLI overrides:** subcommands accept **`--src`**; **`backup`** also accepts **`--dst`** or **`--dest`** for the backup root, which wins over env defaults for that run.
 
+**`--archived` (optional, default off):** For **`backup`**, **`list`**, **`profile`**, and **`bounds`**, pass **`--archived`** to **also** include **`$CODEX_HOME/archived_sessions/`** after finishing the same logic for **`--src`**. Archived rollouts use the same **`rollout-*.jsonl`** layout as active sessions. Does not apply to **`user-messages`** (single file).
+
 ## Bundled tools (this folder)
 
 | File | Role |
 |------|------|
-| **`codex_chat_history.py`** | PEP 723 **`uv run --script`** helper (`requires-python = ">=3.13.0,<3.14"`, `dependencies = []`): **`backup`**, **`list`**, **`profile`**, **`bounds`**, **`user-messages`**. |
+| **`codex_chat_history.py`** | PEP 723 **`uv run --script`** helper (`requires-python = ">=3.13.0,<3.14"`, `dependencies = []`): **`backup`**, **`list`**, **`profile`**, **`bounds`**, **`user-messages`**; optional **`--archived`** on the first four to include **`$CODEX_HOME/archived_sessions/`** after **`--src`**. |
 | **`line_histogram.awk`** | Optional: line-size histogram or extract specific line(s) from huge JSONL before parsing. |
 
 ```sh
@@ -74,6 +76,7 @@ Example **backup** (default destination = `$CODEX_SESSIONS_BACKUP_ROOT` or `~/ic
 ```sh
 ./codex_chat_history.py backup --dry-run
 ./codex_chat_history.py backup --dest "$HOME/icloud/.codex/sessions"
+./codex_chat_history.py list --archived
 ```
 
 ## Search and extract (workflows)

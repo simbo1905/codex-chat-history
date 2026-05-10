@@ -29,7 +29,7 @@ Bundled in **`codex_chat_history/`**:
 | File | Role |
 |------|------|
 | **`SKILL.md`** | Skill instructions for agents |
-| **`codex_chat_history.py`** | `backup`, `list`, `profile`, `bounds`, `user-messages` (Python 3.13.x via PEP 723) |
+| **`codex_chat_history.py`** | `backup`, `list`, `profile`, `bounds`, `user-messages`; optional **`--archived`** on the first four includes **`$CODEX_HOME/archived_sessions/`** after **`--src`**. |
 | **`line_histogram.awk`** | Optional histograms / line slices for huge JSONL |
 
 Details, env vars, and **`jq`** recipes: [**`codex_chat_history/SKILL.md`**](codex_chat_history/SKILL.md).
@@ -76,6 +76,7 @@ uv run --script "$PY" backup --dest "$DEST"   # expect: 0 new rollout gzip write
 mv "$DEST" "${DEST}.old"
 DEST=$(mktemp -d)
 uv run --script "$PY" backup --dest "$DEST"   # full mirror again
+uv run --script "$PY" list --archived | head -n 2   # optional: includes archived rollouts after sessions
 # Optional integrity (default sessions root = ~/.codex/sessions):
 # R=$(find "$HOME/.codex/sessions" -name 'rollout-*.jsonl' -type f -print -quit)
 # REL=${R#"$HOME/.codex/sessions/"}
