@@ -164,7 +164,7 @@ Codex does **not** auto-expire rollout files by age; backups and pruning are ope
 ## Canonical source and releases
 
 - **Repository:** https://github.com/simbo1905/codex-chat-history  
-- **Public gist** (mirrors this folder’s three files): https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51  
+- **Public gist** (mirrors this folder’s files): https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51  
 
 For smoke tests, optional **`git tag`**, and **gist** sync commands, see the **Release checklist** in the repo root **README.md**.
 
