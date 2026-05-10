@@ -48,6 +48,7 @@ All paths support **`~`** expansion. Use **absolute** paths when clarity matters
 | **`CODEX_HOME`** | Codex data root (`config.toml`, state DB, `sessions/`, etc.) | `~/.codex` |
 | **`CODEX_SESSIONS_ROOT`** | Explicit directory containing the **`YYYY/MM/DD`** rollout tree | `$CODEX_HOME/sessions` |
 | **`CODEX_SESSIONS_BACKUP_ROOT`** | Default destination root for **`backup`** (gzip mirror) | `~/icloud/.codex/sessions` |
+| **`CODEX_HISTORY_PATH`** | Override path to **`history.jsonl`** for **`codex_prompt_history_search.py`** | `$CODEX_HOME/history.jsonl` |
 
 **CLI overrides:** subcommands accept **`--src`**; **`backup`** also accepts **`--dst`** or **`--dest`** for the backup root, which wins over env defaults for that run.
 
@@ -58,11 +59,13 @@ All paths support **`~`** expansion. Use **absolute** paths when clarity matters
 | File | Role |
 |------|------|
 | **`codex_chat_history.py`** | PEP 723 **`uv run --script`** helper (`requires-python = ">=3.13.0,<3.14"`, `dependencies = []`): **`backup`**, **`list`**, **`profile`**, **`bounds`**, **`user-messages`**; optional **`--archived`** on the first four to include **`$CODEX_HOME/archived_sessions/`** after **`--src`**. |
+| **`codex_prompt_history_search.py`** | Search **`history.jsonl`** only: **`--mode EXACT|ANY|FUZZY`**, **`-j/--json`**, CSV log-style output with UTC **`YYYY-MM-DD`**. |
 | **`line_histogram.awk`** | Optional: line-size histogram or extract specific line(s) from huge JSONL before parsing. |
 
 ```sh
-chmod +x codex_chat_history.py
+chmod +x codex_chat_history.py codex_prompt_history_search.py
 ./codex_chat_history.py --help
+./codex_prompt_history_search.py --help
 ```
 
 Example **profile** with histogram (from repo or gist):
@@ -136,6 +139,23 @@ jq -r 'select(.type == "compacted") | .payload.message' "$ROLL_FILE"
 ## Related: `history.jsonl`
 
 `$CODEX_HOME/history.jsonl` is a separate, smaller **prompt history** log (not the full rollout). Rollouts under `sessions/` are the complete session transcript for resume/replay tooling.
+
+Each line is JSON: **`{"session_id":"<uuid>","ts":<unix_seconds>,"text":"<message>"}`** (`ts` is Unix seconds; treat calendar **`YYYY-MM-DD`** in the first output column as **UTC** derived from that instant).
+
+### Search prompt history (`codex_prompt_history_search.py`)
+
+```sh
+chmod +x codex_prompt_history_search.py
+./codex_prompt_history_search.py "your phrase"
+```
+
+- **`--mode EXACT`** (default): substring match of the full phrase in **`text`**.
+- **`--mode ANY`**: phrase split on whitespace; match if **any** token appears as a substring in **`text`**.
+- **`--mode FUZZY`**: `difflib.SequenceMatcher` **`quick_ratio`** against full **`text`** (plus substring shortcut); tune with **`--fuzzy-threshold`** (default `0.65`).
+- **`-j` / `--json`**: one JSON object per match (`date`, `ts`, `session_id`, `text`).
+- **`--file`**: override path (default **`$CODEX_HISTORY_PATH`** or **`$CODEX_HOME/history.jsonl`**).
+
+Default (non-JSON) lines are **CSV** (four columns: UTC date, `ts`, `session_id`, `text`) suitable for log-style grepping.
 
 ## Retention
 

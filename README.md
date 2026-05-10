@@ -30,12 +30,13 @@ Bundled in **`codex_chat_history/`**:
 |------|------|
 | **`SKILL.md`** | Skill instructions for agents |
 | **`codex_chat_history.py`** | `backup`, `list`, `profile`, `bounds`, `user-messages`; optional **`--archived`** on the first four includes **`$CODEX_HOME/archived_sessions/`** after **`--src`**. |
+| **`codex_prompt_history_search.py`** | Search **`$CODEX_HOME/history.jsonl`** (prompt history): **`--mode EXACT|ANY|FUZZY`**, **`-j/--json`**, CSV columns UTC date / `ts` / `session_id` / `text`. |
 | **`line_histogram.awk`** | Optional histograms / line slices for huge JSONL |
 
 Details, env vars, and **`jq`** recipes: [**`codex_chat_history/SKILL.md`**](codex_chat_history/SKILL.md).
 
 **Repo (canonical):** [github.com/simbo1905/codex-chat-history](https://github.com/simbo1905/codex-chat-history)  
-**Gist (same three files):** [gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51](https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51)  
+**Gist (SKILL + scripts + awk):** [gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51](https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51)  
 **Related:** Cursor transcripts — [cursor-chat-history](https://github.com/simbo1905/cursor-chat-history)
 
 ## Install
@@ -60,6 +61,7 @@ Then:
 
 ```bash
 chmod +x ~/.codex/skills/codex_chat_history/codex_chat_history/codex_chat_history.py
+chmod +x ~/.codex/skills/codex_chat_history/codex_chat_history/codex_prompt_history_search.py
 ~/.codex/skills/codex_chat_history/codex_chat_history/codex_chat_history.py --help
 ```
 
@@ -96,8 +98,9 @@ rm -rf "${DEST}.old" "$DEST"
    gh gist edit "$GIST" --filename SKILL.md "$D/SKILL.md"
    gh gist edit "$GIST" --filename line_histogram.awk "$D/line_histogram.awk"
    gh gist edit "$GIST" --filename codex_chat_history.py "$D/codex_chat_history.py"
+   gh gist edit "$GIST" --filename codex_prompt_history_search.py "$D/codex_prompt_history_search.py"
    gh api -X PATCH "gists/$GIST" \
-     -f description='Codex Chat History: SKILL + codex_chat_history.py + line_histogram.awk (mirrors https://github.com/simbo1905/codex-chat-history)'
+     -f description='Codex Chat History: SKILL + codex_chat_history.py + codex_prompt_history_search.py + line_histogram.awk (mirrors https://github.com/simbo1905/codex-chat-history)'
    ```
 
 4. Refresh **README** / **SKILL.md** if behavior or defaults changed.
