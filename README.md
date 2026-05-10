@@ -1,6 +1,6 @@
-# codex_chat_history
+# codex-chat-history
 
-> A **SKILL.md** plus a **`uv run --script`** helper to **back up**, **list**, and **inspect** Codex CLI session rollouts under `$CODEX_HOME/sessions` — gzip mirrors that keep the `YYYY/MM/DD` layout, optional line-size histograms, and user-message extraction. This is **not** about Cursor IDE transcripts.
+> A **SKILL.md** plus a **`uv run --script`** helper to **back up**, **list**, and **inspect** Codex CLI session rollouts under `$CODEX_HOME/sessions` — gzip mirrors that keep the `YYYY/MM/DD` layout, optional line-size histograms, and user-message extraction. This is **not** about Cursor IDE agent transcripts; see **[cursor-chat-history](https://github.com/simbo1905/cursor-chat-history)** for those.
 
 ## TL;DR
 
@@ -8,7 +8,7 @@ Jump to [Install](#install), or fetch **SKILL.md** alone:
 
 ```bash
 mkdir -p ~/.codex/skills/codex_chat_history && \
-  curl -fsSL https://raw.githubusercontent.com/simbo1905/codex_chat_history/main/codex_chat_history/SKILL.md \
+  curl -fsSL https://raw.githubusercontent.com/simbo1905/codex-chat-history/main/codex_chat_history/SKILL.md \
   -o ~/.codex/skills/codex_chat_history/SKILL.md
 ```
 
@@ -34,8 +34,9 @@ Bundled in **`codex_chat_history/`**:
 
 Details, env vars, and **`jq`** recipes: [**`codex_chat_history/SKILL.md`**](codex_chat_history/SKILL.md).
 
-**Repo (canonical):** [github.com/simbo1905/codex_chat_history](https://github.com/simbo1905/codex_chat_history)  
-**Gist (same three files):** [gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51](https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51)
+**Repo (canonical):** [github.com/simbo1905/codex-chat-history](https://github.com/simbo1905/codex-chat-history)  
+**Gist (same three files):** [gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51](https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51)  
+**Related:** Cursor transcripts — [cursor-chat-history](https://github.com/simbo1905/cursor-chat-history)
 
 ## Install
 
@@ -43,14 +44,14 @@ Details, env vars, and **`jq`** recipes: [**`codex_chat_history/SKILL.md`**](cod
 
 ```bash
 mkdir -p ~/.codex/skills
-git clone https://github.com/simbo1905/codex_chat_history.git ~/.codex/skills/codex_chat_history
+git clone https://github.com/simbo1905/codex-chat-history.git ~/.codex/skills/codex_chat_history
 ```
 
 **Claude Code (personal)** — same layout works under Claude’s skills dir:
 
 ```bash
 mkdir -p ~/.claude/skills
-git clone https://github.com/simbo1905/codex_chat_history.git ~/.claude/skills/codex_chat_history
+git clone https://github.com/simbo1905/codex-chat-history.git ~/.claude/skills/codex_chat_history
 ```
 
 **Single project:** clone into **`.codex/skills/`** or **`.claude/skills/`** in that repo instead of `$HOME`.
@@ -95,7 +96,7 @@ rm -rf "${DEST}.old" "$DEST"
    gh gist edit "$GIST" --filename line_histogram.awk "$D/line_histogram.awk"
    gh gist edit "$GIST" --filename codex_chat_history.py "$D/codex_chat_history.py"
    gh api -X PATCH "gists/$GIST" \
-     -f description='Codex Chat History: SKILL + codex_chat_history.py + line_histogram.awk (mirrors https://github.com/simbo1905/codex_chat_history)'
+     -f description='Codex Chat History: SKILL + codex_chat_history.py + line_histogram.awk (mirrors https://github.com/simbo1905/codex-chat-history)'
    ```
 
 4. Refresh **README** / **SKILL.md** if behavior or defaults changed.

@@ -30,7 +30,7 @@ with the same `rollout-*.jsonl` filename pattern.
 
 Each JSON line is a rollout record: a top-level **`timestamp`** plus a **`type`** / **`payload`** pair (for example `session_meta`, `event_msg`, `response_item`, `compacted`, `turn_context`). User-typed prompts are generally `type == "event_msg"` with `payload.type == "user_message"` and `payload.message`.
 
-This skill is **not** about Cursor IDE transcripts (`~/.cursor/projects/.../agent-transcripts/...`).
+This skill is **not** about Cursor IDE transcripts (`~/.cursor/projects/.../agent-transcripts/...`); for those, use **[cursor-chat-history](https://github.com/simbo1905/cursor-chat-history)** (script **`cursor_chat_history.py`**).
 
 ## When to use it
 
@@ -140,7 +140,7 @@ Codex does **not** auto-expire rollout files by age; backups and pruning are ope
 
 ## Canonical source and releases
 
-- **Repository:** https://github.com/simbo1905/codex_chat_history  
+- **Repository:** https://github.com/simbo1905/codex-chat-history  
 - **Public gist** (mirrors this folder’s three files): https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51  
 
 For smoke tests, optional **`git tag`**, and **gist** sync commands, see the **Release checklist** in the repo root **README.md**.
