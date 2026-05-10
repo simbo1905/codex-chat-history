@@ -49,7 +49,7 @@ All paths support **`~`** expansion. Use **absolute** paths when clarity matters
 | **`CODEX_SESSIONS_ROOT`** | Explicit directory containing the **`YYYY/MM/DD`** rollout tree | `$CODEX_HOME/sessions` |
 | **`CODEX_SESSIONS_BACKUP_ROOT`** | Default destination root for **`backup`** (gzip mirror) | `~/icloud/.codex/sessions` |
 
-**CLI overrides:** the `codex_chat_history.py` subcommands accept **`--src`** and (for backup) **`--dest`**, which win over the env defaults for that invocation.
+**CLI overrides:** subcommands accept **`--src`**; **`backup`** also accepts **`--dst`** or **`--dest`** for the backup root, which wins over env defaults for that run.
 
 ## Bundled tools (this folder)
 
@@ -137,6 +137,13 @@ jq -r 'select(.type == "compacted") | .payload.message' "$ROLL_FILE"
 ## Retention
 
 Codex does **not** auto-expire rollout files by age; backups and pruning are operator concerns. See Codex release notes / issue trackers for current behavior of `history.jsonl` trimming vs rollouts.
+
+## Canonical source and releases
+
+- **Repository:** https://github.com/simbo1905/codex_chat_history  
+- **Public gist** (mirrors this folder’s three files): https://gist.github.com/simbo1905/34f66e28462c02a2e64ecdf9389fbe51  
+
+For smoke tests, optional **`git tag`**, and **gist** sync commands, see the **Release checklist** in the repo root **README.md**.
 
 ## Copyright
 

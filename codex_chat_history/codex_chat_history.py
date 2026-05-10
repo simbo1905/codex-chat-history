@@ -102,7 +102,12 @@ def cmd_backup(args: argparse.Namespace) -> None:
             dst_gz.parent.mkdir(parents=True, exist_ok=True)
             mtime = int(path.stat().st_mtime)
             with path.open("rb") as raw:
-                with gzip.open(dst_gz, "wb", compresslevel=9, mtime=mtime) as gz:
+                with gzip.GzipFile(
+                    filename=str(dst_gz),
+                    mode="wb",
+                    compresslevel=9,
+                    mtime=mtime,
+                ) as gz:
                     shutil.copyfileobj(raw, gz)
             try:
                 os.utime(dst_gz, (mtime, mtime))
@@ -251,8 +256,10 @@ def main() -> None:
     p_b.add_argument("--src", type=Path, default=_sessions_root(), help=sessions_help)
     p_b.add_argument(
         "--dst",
+        "--dest",
         type=Path,
         default=None,
+        dest="dst",
         help="Backup root (default: $CODEX_SESSIONS_BACKUP_ROOT or ~/icloud/.codex/sessions)",
     )
     p_b.add_argument("-n", "--dry-run", action="store_true")
